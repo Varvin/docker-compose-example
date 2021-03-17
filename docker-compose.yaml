@@ -5,8 +5,6 @@ services:
     container_name: 'postgresdb'
     env_file:
       - configs/postgresql/.env.pg_file
-    ports:
-      - 5432:5432
     volumes:
       - ./configs/postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
       - ./volumes/postgresql/data:/var/lib/postgresql/data
@@ -25,7 +23,6 @@ services:
     env_file:
       - configs/rabbitmq/.env.rmq
     ports:
-      - 5672:5672
       - 15672:15672
     volumes:
       - ./volumes/rabbitmq/data/:/var/lib/rabbitmq/
@@ -42,8 +39,6 @@ services:
   redis:
     image: "redis:6.2-alpine"
     container_name: "redis"
-    ports:
-      - 6379:6379
     volumes:
       - ./volumes/redis:/data
     networks:
@@ -59,8 +54,6 @@ services:
     build: ./BlockProvider
     container_name: "block_provider"
     restart: "on-failure"
-    ports:
-        - 1488:80
     environment:
       - "RMQ_CONNECTION=amqp://admin:admin@172.16.0.11:5672"
       - "BLOCK_CALL_INTERVAL=1"
@@ -79,8 +72,6 @@ services:
     build: ./BlockLogger
     container_name: "block_logger"
     restart: "on-failure"
-    ports:
-      - 1489:80
     environment:
       - "RMQ_CONNECTION=amqp://admin:admin@172.16.0.11:5672"
       - "PG_CONNECTION=Host=172.16.0.10;Port=5432;UserName=admin;Password=password;Database=block_log;Maximum Pool Size=100"
