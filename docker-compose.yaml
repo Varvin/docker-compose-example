@@ -1,0 +1,107 @@
+version: "3.9"
+services:
+  pg_db:
+    image: "postgres:13-alpine"
+    container_name: 'postgresdb'
+    env_file:
+      - configs/postgresql/.env.pg_file
+    ports:
+      - 5432:5432
+    volumes:
+      - ./configs/postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./volumes/postgresql/data:/var/lib/postgresql/data
+    networks:
+      app_net:
+        ipv4_address: 172.16.0.10
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  rabbitMq:
+    image: "rabbitmq:3.8-management-alpine"
+    container_name: 'rabbitmq'
+    env_file:
+      - configs/rabbitmq/.env.rmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ./volumes/rabbitmq/data/:/var/lib/rabbitmq/
+      - ./volumes/rabbitmq/logs/:/var/log/rabbitmq/
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 30s
+      retries: 3
+    networks:
+      app_net:
+        ipv4_address: 172.16.0.11
+        
+  redis:
+    image: "redis:6.2-alpine"
+    container_name: "redis"
+    ports:
+      - 6379:6379
+    volumes:
+      - ./volumes/redis:/data
+    networks:
+      app_net:
+        ipv4_address: 172.16.0.12
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+
+  block_provider:
+    build: ./BlockProvider
+    container_name: "block_provider"
+    restart: "on-failure"
+    ports:
+        - 1488:80
+    environment:
+      - "RMQ_CONNECTION=amqp://admin:admin@172.16.0.11:5672"
+      - "BLOCK_CALL_INTERVAL=1"
+    depends_on:
+      - "rabbitMq"
+    networks:
+      app_net:
+        ipv4_address: 172.16.0.13
+    healthcheck:
+      test: curl -sS http://127.0.0.1:80/api/v1/health/ping || echo 1
+      interval: 10s
+      timeout: 30s
+      retries: 3
+      
+  block_logger:
+    build: ./BlockLogger
+    container_name: "block_logger"
+    restart: "on-failure"
+    ports:
+      - 1489:80
+    environment:
+      - "RMQ_CONNECTION=amqp://admin:admin@172.16.0.11:5672"
+      - "PG_CONNECTION=Host=172.16.0.10;Port=5432;UserName=admin;Password=password;Database=block_log;Maximum Pool Size=100"
+      - "REDIS_CONNECTION=172.16.0.12:6379,syncTimeout=5000"
+    depends_on:
+      - rabbitMq
+      - pg_db
+      - redis
+    networks:
+      app_net:
+        ipv4_address: 172.16.0.14
+    healthcheck:
+      test: curl -sS http://127.0.0.1:80/api/v1/health/ping || echo 1
+      interval: 10s
+      timeout: 30s
+      retries: 3
+        
+networks:
+  app_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.16.0.0/24"
+    
