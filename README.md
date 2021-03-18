@@ -22,7 +22,7 @@
     RMQ_CONNECTION -- строка подключения к rabbitMQ 
     BLOCK_CALL_INTERVAL -- частота опроса ноды и отправки блока в RabbitMQ, задаеться в секундах
     
-5)BlockLogger (порт внутри докера 80)
+5) BlockLogger (порт внутри докера 80)
     Конфигурируеться через переменные окружения
     RMQ_CONNECTION -- строка подключения к RbbitMQ 
     PG_CONNECTION -- строка подключения к PtgresSQL
