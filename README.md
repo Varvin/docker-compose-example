@@ -1,7 +1,7 @@
 # docker-compose-example
 
 1) PostgresSQL (порт внутри докера 5432)
-   Конфигурация распологаеться по пути configs/postgresql/.env.pg_file
+   Конфигурация выполняеться через env_file и распологаеться по пути configs/postgresql/.env.pg_file   
    POSTGRES_USER -- пользователь бд 
    POSTGRES_PASSWORD -- пароль для юзера
    POSTGRES_DB -- имя бд
@@ -9,6 +9,7 @@
    Все волумы сохраняються по пути volumes/postgresql/
    
 2) RabitMQ (порт внутри докера 5672 и 15672)
+   Конфигурация выполняеться через env_file и распологаеться по пути  configs/rabbitmq/.env.rmq
     RABBITMQ_DEFAULT_USER -- default user 
     RABBITMQ_DEFAULT_PASS -- default password	
     Все волумы сохраняються по пути volumes/rabbitmq/
